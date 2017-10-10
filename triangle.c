@@ -340,6 +340,8 @@
 
 #define ONETHIRD 0.333333333333333333333333333333333333333333333333333333333333
 
+#define QUEUESIZE 4096
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -674,9 +676,9 @@ struct mesh {
 /* Variables that maintain the bad triangle queues.  The queues are          */
 /*   ordered from 4095 (highest priority) to 0 (lowest priority).            */
 
-  struct badtriang *queuefront[4096];
-  struct badtriang *queuetail[4096];
-  int nextnonemptyq[4096];
+  struct badtriang *queuefront[QUEUESIZE];
+  struct badtriang *queuetail[QUEUESIZE];
+  int nextnonemptyq[QUEUESIZE];
   int firstnonemptyq;
 
 /* Variable that maintains the stack of recently flipped triangles.          */
@@ -6896,7 +6898,7 @@ struct behavior *b;
 /*  enqueuebadtriang()   Add a bad triangle data structure to the end of a   */
 /*                       queue.                                              */
 /*                                                                           */
-/*  The queue is actually a set of 4096 queues.  I use multiple queues to    */
+/*  The queue is actually a set of QUEUESIZE queues.  I use multiple queues to    */
 /*  give priority to smaller angles.  I originally implemented a heap, but   */
 /*  the queues are faster by a larger margin than I'd suspected.             */
 /*                                                                           */
@@ -6966,6 +6968,11 @@ struct badtriang *badtri;
     queuenumber = 2048 + exponent;
   }
 
+  if (queuenumber>QUEUESIZE){
+    queuenumber=QUEUESIZE;
+  }
+
+  // printf("1 queuenumber is %d \n",queuenumber);
   /* Are we inserting into an empty queue? */
   if (m->queuefront[queuenumber] == (struct badtriang *) NULL) {
     /* Yes, we are inserting into an empty queue.     */
@@ -13713,7 +13720,7 @@ struct behavior *b;
     poolinit(&m->badtriangles, sizeof(struct badtriang), BADTRIPERBLOCK,
              BADTRIPERBLOCK, 0);
     /* Initialize the queues of bad triangles. */
-    for (i = 0; i < 4096; i++) {
+    for (i = 0; i < QUEUESIZE; i++) {
       m->queuefront[i] = (struct badtriang *) NULL;
     }
     m->firstnonemptyq = -1;
