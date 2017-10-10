@@ -6434,7 +6434,7 @@ REAL dheight;
   adxbdy = adx * bdy;
   bdxady = bdx * ady;
 
-  det = adheight * (bdxcdy - cdxbdy) 
+  det = adheight * (bdxcdy - cdxbdy)
       + bdheight * (cdxady - adxcdy)
       + cdheight * (adxbdy - bdxady);
 
@@ -8272,9 +8272,11 @@ int triflaws;
     /*   whose origin is the existing vertex.                            */
     otricopy(horiz, *searchtri);
     otricopy(horiz, m->recenttri);
+    printf("insertvertex:: there is a duplicate here\n");
     return DUPLICATEVERTEX;
   }
   if ((intersect == ONEDGE) || (intersect == OUTSIDE)) {
+    printf(" The vertex falls on an edge or boundary \n");
     /* The vertex falls on an edge or boundary. */
     if (m->checksegments && (splitseg == (struct osub *) NULL)) {
       /* Check whether the vertex falls on a subsegment. */
@@ -8307,6 +8309,7 @@ int triflaws;
         /*   which has not been inserted.                          */
         otricopy(horiz, *searchtri);
         otricopy(horiz, m->recenttri);
+        printf("insertvertex:: there is a vilating vertex\n");
         return VIOLATINGVERTEX;
       }
     }
@@ -8340,6 +8343,58 @@ int triflaws;
       /* Set the element attributes of a new triangle. */
       setelemattribute(newbotright, i, elemattribute(botright, i));
     }
+
+
+    //TODO linearly interpolate between rightvertex and leftvertex. because newvertex is inbetween them
+    float dist_to_rightv= sqrt( (newvertex[0] - rightvertex[0])*(newvertex[0] - rightvertex[0]) + (newvertex[1] - rightvertex[1])*(newvertex[1] - rightvertex[1]) ) ;
+    float dist_to_leftv= sqrt( (newvertex[0] - leftvertex[0])*(newvertex[0] - leftvertex[0]) + (newvertex[1] - leftvertex[1])*(newvertex[1] - leftvertex[1]) ) ;
+    float total= dist_to_rightv+dist_to_leftv;
+
+    for (size_t i = 2; i < 2 + m->nextras; i++) {
+      printf("interpol -1 before custom bary it is  %f \n", newvertex[i] );
+      newvertex[i]= (dist_to_rightv/total)*leftvertex[i] + (dist_to_leftv/total)*rightvertex[i];
+      printf("interpol -1 after custom bary it is  %f \n", newvertex[i] );
+    }
+
+
+    // //MY code for interpolating
+    // // https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+    // //a=borg=leftvertex
+    // //b=bdest=rightvertex
+    // //c=bapex=botvertex
+    // float v0[2];
+    // v0[0]= rightvertex[0]- leftvertex[0];
+    // v0[1]= rightvertex[1]- leftvertex[1];
+    //
+    // float v1[2];
+    // v1[0]= botvertex[0]- leftvertex[0];
+    // v1[1]= botvertex[1]- leftvertex[1];
+    //
+    // float v2[2];
+    // v2[0]= newvertex[0]- leftvertex[0];
+    // v2[1]= newvertex[1]- leftvertex[1];
+    //
+    // float d00 = v0[0]*v0[0] + v0[1]*v0[1];
+    // float d01 = v0[0]*v1[0] + v0[1]*v1[1];
+    // float d11 = v1[0]*v1[0] + v1[1]*v1[1];
+    // float d20 = v2[0]*v0[0] + v2[1]*v0[1];
+    // float d21 = v2[0]*v1[0] + v2[1]*v1[1];
+    // float denom = d00 * d11 - d01 * d01;
+    //
+    // float v = (d11 * d20 - d01 * d21) / denom;
+    // float w = (d00 * d21 - d01 * d20) / denom;
+    // float u = 1.0f - v - w;
+    //
+    // for (size_t i = 2; i < 2 + m->nextras; i++) {
+    //   if (newvertex[i]<0.0){
+    //     printf("interpol -1 before custom bary it is  %f \n", newvertex[i] );
+    //     newvertex[i]= u*leftvertex[i] + v*rightvertex[i] + w*botvertex[i];
+    //     printf("interpol -1 after custom bary it is  %f \n", newvertex[i] );
+    //   }
+    // }
+    //FINSIHED MY CODE FOR INTERPOLATION
+
+
     if (b->vararea) {
       /* Set the area constraint of a new triangle. */
       setareabound(newbotright, areabound(botright));
@@ -8354,6 +8409,9 @@ int triflaws;
         /* Set the element attributes of another new triangle. */
         setelemattribute(newtopright, i, elemattribute(topright, i));
       }
+
+      //TODO no need to interpolate here because the linear interpolation was already done before
+
       if (b->vararea) {
         /* Set the area constraint of another new triangle. */
         setareabound(newtopright, areabound(topright));
@@ -8469,6 +8527,7 @@ int triflaws;
     /*   the Delaunay property.                        */
     lnextself(horiz);
   } else {
+    printf("Insert the vertex in a triangle, splitting it into three\n");
     /* Insert the vertex in a triangle, splitting it into three. */
     lnext(horiz, botleft);
     lprev(horiz, botright);
@@ -8494,6 +8553,44 @@ int triflaws;
       setelemattribute(newbotleft, i, attrib);
       setelemattribute(newbotright, i, attrib);
     }
+    //MY code for interpolating
+    // https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+    //a=borg=leftvertex
+    //b=bdest=rightvertex
+    //c=bapex=botvertex
+    float v0[2];
+    v0[0]= rightvertex[0]- leftvertex[0];
+    v0[1]= rightvertex[1]- leftvertex[1];
+
+    float v1[2];
+    v1[0]= botvertex[0]- leftvertex[0];
+    v1[1]= botvertex[1]- leftvertex[1];
+
+    float v2[2];
+    v2[0]= newvertex[0]- leftvertex[0];
+    v2[1]= newvertex[1]- leftvertex[1];
+
+    float d00 = v0[0]*v0[0] + v0[1]*v0[1];
+    float d01 = v0[0]*v1[0] + v0[1]*v1[1];
+    float d11 = v1[0]*v1[0] + v1[1]*v1[1];
+    float d20 = v2[0]*v0[0] + v2[1]*v0[1];
+    float d21 = v2[0]*v1[0] + v2[1]*v1[1];
+    float denom = d00 * d11 - d01 * d01;
+
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0f - v - w;
+
+    for (size_t i = 2; i < 2 + m->nextras; i++) {
+      // if (newvertex[i]<0.0){
+        printf("interpol 1 before custom bary it is  %f \n", newvertex[i] );
+        newvertex[i]= u*leftvertex[i] + v*rightvertex[i] + w*botvertex[i];
+        printf("interpol 1 after custom bary it is  %f \n", newvertex[i] );
+      // }
+    }
+    //FINSIHED MY CODE FOR INTERPOLATION
+
+
     if (b->vararea) {
       /* Set the area constraint of the new triangles. */
       area = areabound(horiz);
@@ -8693,6 +8790,7 @@ int triflaws;
             setelemattribute(top, i, attrib);
             setelemattribute(horiz, i, attrib);
           }
+
           if (b->vararea) {
             if ((areabound(top) <= 0.0) || (areabound(horiz) <= 0.0)) {
               area = -1.0;
@@ -10241,6 +10339,7 @@ struct behavior *b;
   vertexloop = vertextraverse(m);
   while (vertexloop != (vertex) NULL) {
     starttri.tri = m->dummytri;
+    printf("incrementaldelaunay:: begginign to insertvertex");
     if (insertvertex(m, b, vertexloop, &starttri, (struct osub *) NULL, 0, 0)
         == DUPLICATEVERTEX) {
       if (!b->quiet) {
@@ -11475,7 +11574,7 @@ FILE *polyfile;
       for (j = 0; j < 2; j++) {
         if ((end[j] < b->firstnumber) ||
             (end[j] >= b->firstnumber + m->invertices)) {
-          printf("Error:  Segment %ld has an invalid vertex index.\n", 
+          printf("Error:  Segment %ld has an invalid vertex index.\n",
                  segmentnumber);
           triexit(1);
         }
@@ -13110,7 +13209,7 @@ int regions;
         } else {
           printf("Spreading regional attributes.\n");
         }
-      } else { 
+      } else {
         printf("Spreading regional area constraints.\n");
       }
     }
@@ -13535,6 +13634,68 @@ struct badtriang *badtri;
         /* Interpolate the vertex attributes at the circumcenter. */
         newvertex[i] = borg[i] + xi * (bdest[i] - borg[i])
                               + eta * (bapex[i] - borg[i]);
+
+        ////my own way of computing this barycentric
+        // https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+        //a=borg
+        //b=bdest
+        //c=bapex
+        float v0[2];
+        v0[0]= bdest[0]- borg[0];
+        v0[1]= bdest[1]- borg[1];
+
+        float v1[2];
+        v1[0]= bapex[0]- borg[0];
+        v1[1]= bapex[1]- borg[1];
+
+        float v2[2];
+        v2[0]= newvertex[0]- borg[0];
+        v2[1]= newvertex[1]- borg[1];
+
+        float d00 = v0[0]*v0[0] + v0[1]*v0[1];
+        float d01 = v0[0]*v1[0] + v0[1]*v1[1];
+        float d11 = v1[0]*v1[0] + v1[1]*v1[1];
+        float d20 = v2[0]*v0[0] + v2[1]*v0[1];
+        float d21 = v2[0]*v1[0] + v2[1]*v1[1];
+        float denom = d00 * d11 - d01 * d01;
+
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        printf("before custom bary it is  %f \n", newvertex[i] );
+        newvertex[i]= u*borg[i] + v*bdest[i] + w*bapex[i];
+        printf("after custom bary it is  %f \n", newvertex[i] );
+
+        if (newvertex[i] <0.0){
+          printf("triangle wtf the circumcenter interpol is negative %f \n", newvertex[i]);
+          printf("att borg is %f \n", borg[i]);
+          printf("att bdest is %f \n", bdest[i]);
+          printf("att bapex is %f \n", bapex[i]);
+          printf("u,v,w is %f %f %f \n", u ,v ,w );
+          printf("newvertex is %f %f \n", newvertex[0], newvertex[1]);
+          printf("borg is %f %f \n", borg[0], borg[1]);
+          printf("bdest is %f %f \n", bdest[0], bdest[1]);
+          printf("bapex is %f %f \n", bapex[0], bapex[1]);
+
+          // exit(1);
+        }
+
+
+        if (newvertex[i] >93.938){
+          printf("FUCK OVER MAX %f \n", newvertex[i]);
+          printf("att borg is %f \n", borg[i]);
+          printf("att bdest is %f \n", bdest[i]);
+          printf("att bapex is %f \n", bapex[i]);
+          printf("u,v,w is %f %f %f \n", u ,v ,w );
+          printf("newvertex is %f %f \n", newvertex[0], newvertex[1]);
+          printf("borg is %f %f \n", borg[0], borg[1]);
+          printf("bdest is %f %f \n", bdest[0], bdest[1]);
+          printf("bapex is %f %f \n", bapex[0], bapex[1]);
+
+          // exit(1);
+        }
+
       }
       /* The new vertex must be in the interior, and therefore is a */
       /*   free vertex with a marker of zero.                       */
@@ -13556,11 +13717,27 @@ struct badtriang *badtri;
       /*   and maintain the Delaunay property of the triangulation.        */
       success = insertvertex(m, b, newvertex, &badotri, (struct osub *) NULL,
                              1, 1);
+      printf("FINAL VERTEX HAS ATT %f \n", newvertex[2] );
       if (success == SUCCESSFULVERTEX) {
+        printf("Vertex was actually added \n");
+        if (newvertex[2] < 0.0){
+          printf("FUCK we added a negative one\n");
+        }
+
+        if (newvertex[2] < 0.0){
+          printf("FUCK we added a below min one one\n");
+        }
+
+        if (newvertex[2] > 93.938){
+          printf("FUCK we added a above max one one\n");
+        }
+        printf("\n");
+
         if (m->steinerleft > 0) {
           m->steinerleft--;
         }
       } else if (success == ENCROACHINGVERTEX) {
+        printf("Vertex was rejected because encroaching \n\n");
         /* If the newly inserted vertex encroaches upon a subsegment, */
         /*   delete the new vertex.                                   */
         undovertex(m, b);
@@ -13569,10 +13746,12 @@ struct badtriang *badtri;
         }
         vertexdealloc(m, newvertex);
       } else if (success == VIOLATINGVERTEX) {
+        printf("Vertex was rejected because violating \n\n");
         /* Failed to insert the new vertex, but some subsegment was */
         /*   marked as being encroached.                            */
         vertexdealloc(m, newvertex);
       } else {                                 /* success == DUPLICATEVERTEX */
+        printf("Vertex was rejected because duplicate \n\n");
         /* Couldn't insert the new vertex because a vertex is already there. */
         if (!b->quiet) {
           printf(
@@ -14129,6 +14308,10 @@ int numberofpointattribs;
     /* Read the vertex attributes. */
     for (j = 0; j < numberofpointattribs; j++) {
       vertexloop[2 + j] = pointattriblist[attribindex++];
+      if (vertexloop[2 + j] < 0.0){
+        printf("triangle wtf");
+        exit(1);
+      }
     }
     if (pointmarkerlist != (int *) NULL) {
       /* Read a vertex marker. */
@@ -15689,6 +15872,7 @@ char **argv;
 #endif /* not TRILIBRARY */
 
 {
+  setbuf(stdout, NULL);
   struct mesh m;
   struct behavior b;
   REAL *holearray;                                        /* Array of holes. */

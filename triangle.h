@@ -247,6 +247,7 @@
 /*  not used, `numberofsegments' will indicate the number of boundary edges. */
 /*                                                                           */
 /*****************************************************************************/
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
