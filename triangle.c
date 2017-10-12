@@ -3321,7 +3321,7 @@ struct behavior *b;
   b->minangle = 0.0;
   b->maxarea = -1.0;
   b->quiet = b->verbose = 0;
-  b->robustinterpolation=1;
+  b->robustinterpolation=0;
 #ifndef TRILIBRARY
   b->innodefilename[0] = '\0';
 #endif /* not TRILIBRARY */
